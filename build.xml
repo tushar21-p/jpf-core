@@ -106,21 +106,50 @@
     <mkdir dir="build/peers"/>
     <javac srcdir="src/peers" destdir="build/peers" includeantruntime="false"
            debug="${debug}" deprecation="${deprecation}" classpathref="lib.path">
-    	<compilerarg value="-XDenableSunApiLintControl"/>
-    	<compilerarg value="-Xlint:all,-sunapi,-serial"/>    	
+      <compilerarg value="-Xlint:all,-serial"/>
+
+      <compilerarg value="--add-exports"/>
+      <compilerarg value="java.base/jdk.internal.misc=ALL-UNNAMED"/>
      </javac>
   </target>
   
   <target name="-compile-classes" if="have_classes" depends="-compile-annotations,-compile-main" >
     <mkdir dir="build/classes"/>
-    <javac srcdir="src/classes" destdir="build/classes" includeantruntime="false"
-           debug="${debug}" deprecation="${deprecation}">
-      <compilerarg value="-XDenableSunApiLintControl"/>
-      <compilerarg value="-Xlint:all,-sunapi"/>   
-      <classpath>
-        <path refid="lib.path"/>
-        <pathelement location="build/annotations"/>
-      </classpath>
+
+    <!-- compile non-module classes -->
+    <javac srcdir="src/classes/gov:src/classes/org" destdir="build/classes" includeantruntime="false"
+           debug="${debug}" deprecation="${deprecation}" classpathref="lib.path">
+      <compilerarg value="-Xlint:all"/>
+
+      <compilerarg value="--patch-module"/>
+      <compilerarg value="java.base=src/classes/modules/java.base"/>
+
+      <compilerarg value="--patch-module"/>
+      <compilerarg value="java.logging=src/classes/modules/java.logging"/>
+
+      <compilerarg value="--add-exports"/>
+      <compilerarg value="java.base/sun.net.www.protocol.http=ALL-UNNAMED"/>
+
+      <compilerarg value="--add-reads"/>
+      <compilerarg value="java.base=ALL-UNNAMED"/>
+    </javac>
+
+    <!-- patch model classes -->
+    <javac modulesourcepath="src/classes/modules" destdir="build/classes" includeantruntime="false"
+           debug="${debug}" deprecation="${deprecation}" classpathref="lib.path">
+      <compilerarg value="-Xlint:all"/>
+
+      <compilerarg value="--patch-module"/>
+      <compilerarg value="java.base=src/classes/modules/java.base"/>
+
+      <compilerarg value="--patch-module"/>
+      <compilerarg value="java.logging=src/classes/modules/java.logging"/>
+
+      <compilerarg value="--add-exports"/>
+      <compilerarg value="java.base/sun.net.www.protocol.http=ALL-UNNAMED"/>
+
+      <compilerarg value="--add-reads"/>
+      <compilerarg value="java.base=ALL-UNNAMED"/>
     </javac>
   </target>
   
@@ -130,8 +159,10 @@
     <javac sourcepath="" srcdir="src/tests" destdir="build/tests" includeantruntime="false"
            debug="${debug}" deprecation="${deprecation}"
            includes="*,gov/nasa/jpf/**,classloader_specific_tests/**">
-      <compilerarg value="-XDenableSunApiLintControl"/>
-      <compilerarg value="-Xlint:all,-sunapi,-serial,-rawtypes,-unchecked"/>
+      <compilerarg value="-Xlint:all,-serial,-rawtypes,-unchecked"/>
+
+      <compilerarg value="--add-exports"/>
+      <compilerarg value="java.base/jdk.internal.misc=ALL-UNNAMED"/>
 
       <include name="*gov/nasa/jpf/**"/>
       <include name="classloader_specific_tests/**"/>
@@ -446,6 +477,8 @@
         </fileset>
       </batchtest>
 
+      <jvmarg value="--add-opens"/>
+      <jvmarg value="java.base/jdk.internal.misc=ALL-UNNAMED"/>
     </junit>
 
     <fail if="test.failed" />
